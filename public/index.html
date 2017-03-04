@@ -41,42 +41,55 @@
 
 <!-- Control -->
 <div class="container-fluid" ng-if="vm.mode == 'control'">
-    <div class="row">
-        <div class="col-xs-6 col-sm-4">
-            <div>
-                <span>Clear:</span>
-                <button type="button" class="btn btn-default" ng-click="vm.clearImage()">Image</button>
-                <button type="button" class="btn btn-default" ng-click="vm.clearBackgroundImage()">Background</button>
-            </div>
-        </div>
-        <div class="col-xs-6 col-sm-4">
-            <div class="row">
-                <div class="col-xs-6 col-sm-8">
-                    <input type="color" class="form-control" title="Background color" ng-model="vm.bgColor"/>
-                </div>
-                <div class="col-xs-6 col-sm-4">
-                    <button type="button" class="btn btn-default" ng-click="vm.setBgColor()">Set BG Color</button>
+    <form class="form-horizontal" ng-submit="vm.addImage()">
+        <div class="form-group">
+            <div class="col-xs-6 col-sm-4">
+                <div>
+                    <span>Clear:</span>
+                    <button type="button" class="btn btn-default" ng-click="vm.clearImage()">Image</button>
+                    <button type="button" class="btn btn-default" ng-click="vm.clearBackgroundImage()">Background</button>
                 </div>
             </div>
-        </div>
-        <div class="col-xs-12 col-sm-4">
-            <div class="text-right">
-                <button type="button" class="btn btn-default" ng-click="vm.setSelectMode()">Select Mode</button>
-                <button type="button" class="btn btn-primary" ng-click="vm.getImages()">Refresh</button>
-            </div>
-        </div>
-    </div>
-    <div class="row">
-        <div class="col-xs-2 col-sm-1" ng-repeat="image in vm.images">
-            <div class="text-center">
-                <div class="list-img">
-                    <img src="" ng-src="{{image}}" alt="{{image}}" class="img-responsive img-thumbnail"/>
+            <div class="col-xs-6 col-sm-4">
+                <div class="row">
+                    <div class="col-xs-6 col-sm-8">
+                        <input type="color" class="form-control" title="Background color" ng-model="vm.bgColor"/>
+                    </div>
+                    <div class="col-xs-6 col-sm-4">
+                        <button type="button" class="btn btn-default" ng-click="vm.setBgColor()">Set BG Color</button>
+                    </div>
                 </div>
-                <button type="button" class="btn btn-default" ng-click="vm.selectImage(image)">Set</button>
-                <button type="button" class="btn btn-default" ng-click="vm.selectBackgroundImage(image)">BG</button>
+            </div>
+            <div class="col-xs-12 col-sm-4">
+                <div class="text-right">
+                    <button type="button" class="btn btn-default" ng-click="vm.setSelectMode()">Select Mode</button>
+                    <button type="button" class="btn btn-primary" ng-click="vm.getImages()">Refresh</button>
+                </div>
             </div>
         </div>
-    </div>
+        <div class="form-group">
+            <div class="col-xs-2 col-sm-1" ng-repeat="image in vm.images">
+                <div class="text-center">
+                    <div class="list-img">
+                        <img src="" alt="{{image}}" class="img-responsive img-thumbnail" title="{{image | fileName:true}}"
+                             ng-src="{{image}}"/>
+                    </div>
+                    <button type="button" class="btn btn-default" ng-click="vm.selectImage(image)">Set</button>
+                    <button type="button" class="btn btn-default" ng-click="vm.selectBackgroundImage(image)">BG</button>
+                </div>
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-xs-12 col-sm-6 col-md-3">
+                <div class="input-group">
+                    <input type="text" class="form-control" placeholder="Image URL" ng-model="vm.imageUrl"/>
+                    <div class="input-group-btn">
+                        <button type="submit" class="btn btn-success">Add</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
 </div>
 <script src="https://cdn.jsdelivr.net/lodash/4.17.4/lodash.min.js" type="application/javascript"></script>
 <script src="/socket.io/socket.io.js"></script>

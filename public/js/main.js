@@ -69,6 +69,19 @@ imageShareModule.directive('imageLoad', ['$rootScope', function($rootScope) {
     };
 }]);
 
+imageShareModule.filter('fileName', [function() {
+    return function(text, stripExtension) {
+        var loc = text.lastIndexOf('/');
+        if (loc >= 0) {
+            text = text.substring(loc + 1);
+        }
+        if (stripExtension && (loc = text.lastIndexOf('.')) > 0) {
+            text = text.substring(0, loc);
+        }
+        return text;
+    }
+}]);
+
 imageShareModule.controller('Main', ['$location', '$log', '$rootScope', '$window', 'io', function ($location, $log, $rootScope, $window, io) {
     var vm = this;
     var socket = io('/');
@@ -89,6 +102,12 @@ imageShareModule.controller('Main', ['$location', '$log', '$rootScope', '$window
     };
 
     // Image handling
+    vm.addImage = function() {
+        if (vm.imageUrl) {
+            socket.emit('app.addImage', vm.imageUrl);
+            vm.imageUrl = '';
+        }
+    };
     vm.clearImage = function() {
         socket.emit('app.changeImage', '');
     };

@@ -2,7 +2,7 @@
  * Created by coakley on 3/3/17.
  */
 
-var fs = require('fs');
+var imagesService = require('../src/ImagesService');
 
 function emitError(socket, err) {
     socket.emit('app.error', {
@@ -11,18 +11,13 @@ function emitError(socket, err) {
 }
 
 function sendImagesTo(socket) {
-    fs.readdir(__dirname + '/../public/images', function(err, items) {
-        if (err) {
+    imagesService.getImages()
+        .then(function(images) {
+            socket.emit('app.images', images);
+        })
+        .catch(function(err) {
             emitError(socket, err);
-            return;
-        }
-
-        var images = [];
-        for (var i = 0; i < items.length; i++) {
-            images.push('images/' + items[i]);
-        }
-        socket.emit('app.images', images);
-    });
+        });
 }
 
 module.exports = function(server) {
@@ -45,6 +40,15 @@ module.exports = function(server) {
         socket.on('app.changeBgColor', function(image) {
             io.emit('app.bgColorChange', image);
         });
+        socket.on('app.addImage', function(imageUrl) {
+            imagesService.addToImagesFile(imageUrl)
+                .then(function() {
+                    sendImagesTo(socket);
+                })
+                .catch(function(err) {
+                    emitError(socket, err);
+                });
+        })
     });
 
     return io;

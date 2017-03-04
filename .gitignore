@@ -31,3 +31,11 @@ npm-debug.log
 
 # IDE/Editor
 .idea/
+
+# Local Files
+linkedImages.json
+public/images/*.jpg
+public/images/*.jpeg
+public/images/*.png
+public/images/*.gif
+public/images/*.bmp
