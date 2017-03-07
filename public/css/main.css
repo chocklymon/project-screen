@@ -9,13 +9,23 @@
 }
 
 .list-img {
-    display: flex;
-    align-items: center;
+    /*display: flex;*/
+    /*align-items: center;*/
     height: 200px;
+
+    white-space: nowrap;
+    text-align: center; margin: 1em 0;
+}
+.list-img span {
+    display: inline-block;
+    height: 100%;
+    vertical-align: middle;
 }
 .list-img img {
+    /*max-height: 200px;*/
+    /*flex: 1;*/
     max-height: 200px;
-    flex: 1;
+    vertical-align: middle;
 }
 
 .background-img {

@@ -68,10 +68,11 @@
             </div>
         </div>
         <div class="form-group">
-            <div class="col-xs-2 col-sm-1" ng-repeat="image in vm.images">
+            <div class="col-xs-6 col-sm-3 col-md-2 col-lg-1" ng-repeat="image in vm.images">
                 <div class="text-center">
                     <div class="list-img">
-                        <img src="" alt="{{image}}" class="img-responsive img-thumbnail" title="{{image | fileName:true}}"
+                        <span></span>
+                        <img src="" alt="{{image}}" class="img-thumbnail" title="{{image | fileName:true}}"
                              ng-src="{{image}}"/>
                     </div>
                     <button type="button" class="btn btn-default" ng-click="vm.selectImage(image)">Set</button>

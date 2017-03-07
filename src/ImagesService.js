@@ -55,6 +55,11 @@ var ImagesService = {
         return ImagesService.readImagesFile()
             .then(function(file) {
                 // Add the URL
+                for (var i = 0; i < file.length; i++) {
+                    if (file[i] == addMe) {
+                        return Promise.reject('Image already added');
+                    }
+                }
                 file.push(addMe);
 
                 // Save back to disk
