@@ -9,93 +9,99 @@
           integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous"/>
     <link rel="stylesheet" type="text/css" href="css/main.css"/>
 </head>
-<body data-ng-controller="Main as vm">
-
-<!-- Select -->
-<div class="align-center-container" ng-if="!vm.mode">
-    <div class="align-center-item">
-        <div class="text-center">
-            <h1>Select Mode</h1>
-            <div>
-                <button type="button" class="btn btn-primary" ng-click="vm.setDisplayMode()">Display</button>
-                <button type="button" class="btn btn-primary" ng-click="vm.setControlMode()">Control</button>
-            </div>
-        </div>
+<body>
+<div ng-view="">
+    <div class="loading-overlay">
+        <div>Loading</div>
     </div>
-</div>
-
-<!-- Display -->
-<div ng-if="vm.mode == 'display'">
-    <div class="background-img" ng-style="{'background-color': vm.bgColor}">
-        <div class="fade-in" ng-animate-swap="vm.backgroundImage">
-            <img src="" ng-src="{{vm.backgroundImage}}" alt=""/>
-        </div>
-    </div>
-    <div class="img-container">
-        <div class="fade-in img-cell" ng-animate-swap="vm.image" ng-style="{'top': vm.imageTop}">
-            <img src="" alt="{{vm.image}}" class="img-responsive center-block"
-                 ng-src="{{vm.image}}" ng-style="{'max-height': vm.pageHeight}" image-load=""/>
-        </div>
-    </div>
-</div>
-
-<!-- Control -->
-<div class="container-fluid" ng-if="vm.mode == 'control'">
-    <form class="form-horizontal" ng-submit="vm.addImage()">
-        <div class="form-group">
-            <div class="col-xs-6 col-sm-4">
-                <div>
-                    <span>Clear:</span>
-                    <button type="button" class="btn btn-default" ng-click="vm.clearImage()">Image</button>
-                    <button type="button" class="btn btn-default" ng-click="vm.clearBackgroundImage()">Background</button>
-                </div>
-            </div>
-            <div class="col-xs-6 col-sm-4">
-                <div class="row">
-                    <div class="col-xs-6 col-sm-8">
-                        <input type="color" class="form-control" title="Background color" ng-model="vm.bgColor"/>
-                    </div>
-                    <div class="col-xs-6 col-sm-4">
-                        <button type="button" class="btn btn-default" ng-click="vm.setBgColor()">Set BG Color</button>
-                    </div>
-                </div>
-            </div>
-            <div class="col-xs-12 col-sm-4">
-                <div class="text-right">
-                    <button type="button" class="btn btn-default" ng-click="vm.setSelectMode()">Select Mode</button>
-                    <button type="button" class="btn btn-primary" ng-click="vm.getImages()">Refresh</button>
-                </div>
-            </div>
-        </div>
-        <div class="form-group">
-            <div class="col-xs-6 col-sm-3 col-md-2 col-lg-1" ng-repeat="image in vm.images">
-                <div class="text-center">
-                    <div class="list-img">
-                        <span></span>
-                        <img src="" alt="{{image}}" class="img-thumbnail" title="{{image | fileName:true}}"
-                             ng-src="{{image}}"/>
-                    </div>
-                    <button type="button" class="btn btn-default" ng-click="vm.selectImage(image)">Set</button>
-                    <button type="button" class="btn btn-default" ng-click="vm.selectBackgroundImage(image)">BG</button>
-                </div>
-            </div>
-        </div>
-        <div class="form-group">
-            <div class="col-xs-12 col-sm-6 col-md-3">
-                <div class="input-group">
-                    <input type="text" class="form-control" placeholder="Image URL" ng-model="vm.imageUrl"/>
-                    <div class="input-group-btn">
-                        <button type="submit" class="btn btn-success">Add</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </form>
 </div>
 <script src="https://cdn.jsdelivr.net/lodash/4.17.4/lodash.min.js" type="application/javascript"></script>
 <script src="/socket.io/socket.io.js"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.2/angular.min.js" type="application/javascript"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.2/angular-route.min.js" type="application/javascript"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.2/angular-animate.min.js" type="application/javascript"></script>
 <script src="js/main.js" type="application/javascript"></script>
+<script type="text/ng-template" id="DisplayTemplate.html">
+    <div>
+        <div class="background-img" ng-style="{'background-color': vm.bgColor}">
+            <div class="fade-in" ng-animate-swap="vm.backgroundImage">
+                <img src="" ng-src="{{vm.backgroundImage}}" alt=""/>
+            </div>
+        </div>
+        <div class="img-container">
+            <div class="fade-in img-cell" ng-animate-swap="vm.image" ng-style="{'top': vm.imageTop}">
+                <img src="" alt="{{vm.image}}" class="img-responsive center-block"
+                     ng-src="{{vm.image}}" ng-style="{'max-height': vm.pageHeight}" image-load=""/>
+            </div>
+        </div>
+    </div>
+</script>
+<script type="text/ng-template" id="ManageTemplate.html">
+    <div class="container-fluid">
+        <form class="form-horizontal" ng-submit="vm.addImage()">
+            <div class="form-group">
+                <div class="col-xs-6 col-sm-4">
+                    <div>
+                        <span>Clear:</span>
+                        <button type="button" class="btn btn-default" ng-click="vm.clearImage()">Image</button>
+                        <button type="button" class="btn btn-default" ng-click="vm.clearBackgroundImage()">Background</button>
+                    </div>
+                </div>
+                <div class="col-xs-6 col-sm-4">
+                    <div class="row">
+                        <div class="col-xs-6 col-sm-8">
+                            <input type="color" class="form-control" title="Background color" ng-model="vm.bgColor"/>
+                        </div>
+                        <div class="col-xs-6 col-sm-4">
+                            <button type="button" class="btn btn-default" ng-click="vm.setBgColor()">Set BG Color</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xs-12 col-sm-4">
+                    <div class="text-right">
+                        <a href="/" class="btn btn-default">Select Mode</a>
+                        <button type="button" class="btn btn-primary" ng-click="vm.getImages()">Refresh</button>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-xs-6 col-sm-3 col-md-2 col-lg-1" ng-repeat="image in vm.images">
+                    <div class="text-center">
+                        <div class="list-img">
+                            <span></span>
+                            <img src="" alt="{{image}}" class="img-thumbnail" title="{{image | fileName:true}}"
+                                 ng-src="{{image}}"/>
+                        </div>
+                        <button type="button" class="btn btn-default" ng-click="vm.selectImage(image)">Set</button>
+                        <button type="button" class="btn btn-default" ng-click="vm.selectBackgroundImage(image)">BG</button>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-xs-12 col-sm-6 col-md-3">
+                    <div class="input-group">
+                        <input type="text" class="form-control" placeholder="Image URL" ng-model="vm.imageUrl"/>
+                        <div class="input-group-btn">
+                            <button type="submit" class="btn btn-success">Add</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</script>
+<script type="text/ng-template" id="SelectTemplate.html">
+    <div class="align-center-container">
+        <div class="align-center-item">
+            <div class="text-center">
+                <h1>Select Mode</h1>
+                <div>
+                    <button type="button" class="btn btn-primary" ng-click="vm.setDisplayMode()">Display</button>
+                    <button type="button" class="btn btn-primary" ng-click="vm.setControlMode()">Control</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</script>
 </body>
 </html>

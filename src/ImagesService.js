@@ -47,7 +47,7 @@ var ImagesService = {
     },
 
     writeImagesFile: function writeImagesFile(fileContents) {
-        return fs.writeFileAsync(imagesFileName, JSON.stringify(fileContents), 'UTF-8');
+        return fs.writeFileAsync(imagesFileName, JSON.stringify(fileContents, null, 2), 'UTF-8');
     },
 
     addToImagesFile: function addToImagesFile(addMe) {

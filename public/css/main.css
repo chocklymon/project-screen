@@ -8,6 +8,14 @@
     flex: 1;
 }
 
+.loading-overlay, .background-img {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    left: 0;
+}
+
 .list-img {
     /*display: flex;*/
     /*align-items: center;*/
@@ -31,11 +39,6 @@
 .background-img {
     z-index: 2;
     background-color: #030303;
-    position: fixed;
-    top: 0;
-    bottom: 0;
-    right: 0;
-    left: 0;
 }
 .background-img img {
     position: absolute;
