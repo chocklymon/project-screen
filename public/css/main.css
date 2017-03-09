@@ -1,4 +1,7 @@
-.align-center-container {
+
+/* $PAGE LAYOUT */
+/* Vertical Center Blocks */
+.align-center-container, .loading-overlay {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -8,6 +11,7 @@
     flex: 1;
 }
 
+/* Full screen overlays */
 .loading-overlay, .background-img {
     position: fixed;
     top: 0;
@@ -16,11 +20,58 @@
     left: 0;
 }
 
-.list-img {
-    /*display: flex;*/
-    /*align-items: center;*/
-    height: 200px;
+/* Make the loading text larger */
+.loading-overlay h2 {
+    font-size: 50px;
+}
 
+/*
+ $CSS SPINNER
+ Modified from: http://tobiasahlin.com/spinkit/
+ */
+.spinner {
+    margin: 20px auto 40px;
+    width: 70px;
+    text-align: center;
+}
+.spinner > div {
+    width: 18px;
+    height: 18px;
+    background-color: #333;
+
+    border-radius: 100%;
+    display: inline-block;
+    -webkit-animation: sk-bouncedelay 1.4s infinite ease-in-out both;
+    animation: sk-bouncedelay 1.4s infinite ease-in-out both;
+}
+.spinner .bounce1 {
+    -webkit-animation-delay: -0.32s;
+    animation-delay: -0.32s;
+}
+.spinner .bounce2 {
+    -webkit-animation-delay: -0.16s;
+    animation-delay: -0.16s;
+}
+
+@-webkit-keyframes sk-bouncedelay {
+    0%, 80%, 100% { -webkit-transform: scale(0) }
+    40% { -webkit-transform: scale(1.0) }
+}
+@keyframes sk-bouncedelay {
+    0%, 80%, 100% {
+        -webkit-transform: scale(0);
+        transform: scale(0);
+    } 40% {
+          -webkit-transform: scale(1.0);
+          transform: scale(1.0);
+      }
+}
+
+
+/* $COMPONENTS */
+/* List of images */
+.list-img {
+    height: 200px;
     white-space: nowrap;
     text-align: center; margin: 1em 0;
 }
@@ -30,12 +81,11 @@
     vertical-align: middle;
 }
 .list-img img {
-    /*max-height: 200px;*/
-    /*flex: 1;*/
     max-height: 200px;
     vertical-align: middle;
 }
 
+/* Full screen background image */
 .background-img {
     z-index: 2;
     background-color: #030303;
@@ -50,7 +100,10 @@
     filter: blur(5px) brightness(.75);
 }
 
-/* Make it so that images are swapped in place */
+/* Centered full sized image
+ * Make it so that images are swapped in place by positioning them absolutely. This uses JS to adjust the vertical
+ * position as the images within the container change.
+ */
 .img-container {
     z-index: 50;
     position: absolute;
@@ -66,7 +119,8 @@
     right: 0;
 }
 
-/* Fade transition for swap */
+/* $ANIMATIONS */
+/* Fade transition for ng-swap */
 .fade-in {
     transition: opacity 1s linear;
 }

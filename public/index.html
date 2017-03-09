@@ -10,9 +10,21 @@
     <link rel="stylesheet" type="text/css" href="css/main.css"/>
 </head>
 <body>
+<noscript>
+    <div class="alert alert-danger">
+        The page requires Javascript to function.
+    </div>
+</noscript>
 <div ng-view="">
     <div class="loading-overlay">
-        <div>Loading</div>
+        <div class="align-center-item">
+            <h2 class="text-center">Loading</h2>
+            <div class="spinner">
+                <div class="bounce1"></div>
+                <div class="bounce2"></div>
+                <div class="bounce3"></div>
+            </div>
+        </div>
     </div>
 </div>
 <script src="https://cdn.jsdelivr.net/lodash/4.17.4/lodash.min.js" type="application/javascript"></script>
@@ -59,8 +71,8 @@
                 </div>
                 <div class="col-xs-12 col-sm-4">
                     <div class="text-right">
-                        <a href="/" class="btn btn-default">Select Mode</a>
-                        <button type="button" class="btn btn-primary" ng-click="vm.getImages()">Refresh</button>
+                        <button type="button" class="btn btn-default" ng-click="vm.getImages()">Refresh</button>
+                        <a ng-href="#!/display/{{vm.managerId}}" target="_blank" class="btn btn-primary">Open Display</a>
                     </div>
                 </div>
             </div>
@@ -88,19 +100,6 @@
                 </div>
             </div>
         </form>
-    </div>
-</script>
-<script type="text/ng-template" id="SelectTemplate.html">
-    <div class="align-center-container">
-        <div class="align-center-item">
-            <div class="text-center">
-                <h1>Select Mode</h1>
-                <div>
-                    <button type="button" class="btn btn-primary" ng-click="vm.setDisplayMode()">Display</button>
-                    <button type="button" class="btn btn-primary" ng-click="vm.setControlMode()">Control</button>
-                </div>
-            </div>
-        </div>
     </div>
 </script>
 </body>

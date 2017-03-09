@@ -24,22 +24,16 @@ module.exports = function(server) {
     var io = require('socket.io')(server);
 
     io.on('connect', function(socket) {
-        console.log('Socket connected');
+        console.log('Socket connected. Id:', socket.id);
 
-        socket.on('app.getImages', function() {
-            console.log('Get Images');
-            sendImagesTo(socket);
+        // The socket is requesting to join a room
+        socket.on('join', function(managerId) {
+            console.log('Join:', managerId);
+            socket.managerId = managerId;
+            socket.join(managerId);
         });
 
-        socket.on('app.changeImage', function(image) {
-            io.emit('app.imageChange', image);
-        });
-        socket.on('app.changeBgImage', function(image) {
-            io.emit('app.bgImageChange', image);
-        });
-        socket.on('app.changeBgColor', function(image) {
-            io.emit('app.bgColorChange', image);
-        });
+        // Add and get images
         socket.on('app.addImage', function(imageUrl) {
             imagesService.addToImagesFile(imageUrl)
                 .then(function() {
@@ -48,7 +42,28 @@ module.exports = function(server) {
                 .catch(function(err) {
                     emitError(socket, err);
                 });
-        })
+        });
+        socket.on('app.getImages', function() {
+            // console.log('Get Images');
+            sendImagesTo(socket);
+        });
+
+        // Image change events. Take an image change and then broadcast it to the room.
+        socket.on('app.changeImage', function(image) {
+            if (socket.managerId) {
+                socket.to(socket.managerId).emit('app.imageChange', image);
+            }
+        });
+        socket.on('app.changeBgImage', function(image) {
+            if (socket.managerId) {
+                socket.to(socket.managerId).emit('app.bgImageChange', image);
+            }
+        });
+        socket.on('app.changeBgColor', function(image) {
+            if (socket.managerId) {
+                socket.to(socket.managerId).emit('app.bgColorChange', image);
+            }
+        });
     });
 
     return io;
