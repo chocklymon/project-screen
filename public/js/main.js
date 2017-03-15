@@ -234,6 +234,18 @@ imageShareModule.directive('imageLoad', ['$rootScope', function($rootScope) {
     };
 }]);
 
+imageShareModule.directive('shareLink', ['$location', function($location) {
+    return {
+        restrict: 'A',
+        template: '<a href="{{link}}" target="_blank">{{link}}</a>',
+        link: function(scope, element, attrs) {
+            var urlBase = attrs.shareLink;
+            var currentUrl = $location.absUrl();
+            scope.link = currentUrl.substring(0, currentUrl.indexOf('#')) + urlBase;
+        }
+    };
+}]);
+
 imageShareModule.filter('fileName', [function() {
     return function(text, stripExtension) {
         var loc = text.lastIndexOf('/');
@@ -304,12 +316,16 @@ imageShareModule.controller('ManageController', ['$log', 'io', 'CodeName', 'Sess
     // TODO persist images across page refreshes, so that the controller and page can display what image is displayed
 
     // Get or generate a manager ID
-    // TODO provide a way to view and generate a new manager ID (need leave room and others)
     vm.managerId = SessionStorage.get('managerId');
     if (!vm.managerId) {
-        vm.managerId = CodeName.generate();
-        SessionStorage.set('managerId', vm.managerId);
+        generateManagerId();
     }
+
+    vm.newRoom = function() {
+        socket.emit('leave', vm.managerId);
+        generateManagerId();
+        socket.emit('join', vm.managerId);
+    };
 
     vm.bgColor = '#030303';
 
@@ -352,6 +368,11 @@ imageShareModule.controller('ManageController', ['$log', 'io', 'CodeName', 'Sess
     // Functions
     function getImages() {
         socket.emit('app.getImages');
+    }
+
+    function generateManagerId() {
+        vm.managerId = CodeName.generate();
+        SessionStorage.set('managerId', vm.managerId);
     }
 }]);
 

@@ -32,6 +32,12 @@ module.exports = function(server) {
             socket.managerId = managerId;
             socket.join(managerId);
         });
+        // The socket is requesting to leave a room
+        socket.on('leave', function(managerId) {
+            console.log('Leave:', managerId);
+            socket.managerId = null;
+            socket.leave(managerId);
+        });
 
         // Add and get images
         socket.on('app.addImage', function(imageUrl) {

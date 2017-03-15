@@ -71,17 +71,20 @@
 /* $COMPONENTS */
 /* List of images */
 .list-img {
+    display: block;
     height: 200px;
     white-space: nowrap;
     text-align: center; margin: 1em 0;
 }
-.list-img span {
-    display: inline-block;
+.list-img button {
+    display: block;
     height: 100%;
-    vertical-align: middle;
+    width: 100%;
+    padding: 2px;
 }
 .list-img img {
-    max-height: 200px;
+    max-width: 100%;
+    max-height: 195px;
     vertical-align: middle;
 }
 
@@ -117,6 +120,11 @@
     position: absolute;
     left: 0;
     right: 0;
+}
+
+/* Misc */
+.panel-heading .close {
+    line-height: 14px;
 }
 
 /* $ANIMATIONS */
