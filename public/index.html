@@ -114,9 +114,9 @@
                 <div class="col-xs-6 col-sm-3 col-md-2 col-lg-1" ng-repeat="image in vm.images">
                     <div class="text-center">
                         <div class="list-img">
-                            <button type="button" class="btn btn-default" title="{{image | fileName:true}}"
+                            <button type="button" class="btn btn-default" title="{{image.src | fileName:true}}"
                                     ng-click="vm.selectImage(image)">
-                                <img src="" alt="{{image}}" class="img-rounded" ng-src="{{image}}"/>
+                                <img src="" alt="{{image.src}}" class="img-rounded" ng-src="{{image.thumb}}"/>
                             </button>
                         </div>
                         <button type="button" class="btn btn-default" ng-click="vm.selectBackgroundImage(image)">BG</button>

@@ -344,10 +344,10 @@ imageShareModule.controller('ManageController', ['$log', 'io', 'CodeName', 'Sess
     };
     vm.getImages = getImages;
     vm.selectImage = function(image) {
-        socket.emit('app.changeImage', image);
+        socket.emit('app.changeImage', image.src);
     };
     vm.selectBackgroundImage = function(image) {
-        socket.emit('app.changeBgImage', image);
+        socket.emit('app.changeBgImage', image.src);
     };
     vm.setBgColor = function() {
         socket.emit('app.changeBgColor', vm.bgColor);
