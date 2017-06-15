@@ -319,7 +319,6 @@ imageShareModule.controller('ManageController', ['$log', 'io', 'CodeName', 'Sess
         background: '',
         bgColor: '#030303'
     });
-    console.log(vm.current);
 
     // Get or generate a manager ID
     vm.managerId = SessionStorage.get('managerId');
@@ -377,14 +376,14 @@ imageShareModule.controller('ManageController', ['$log', 'io', 'CodeName', 'Sess
     }
 
     function changeImage(image) {
-        var img = image ? image.src : '';
-        vm.current.image = image || '';
+        var img = image ? (image.src ? image.src : image) : '';
+        vm.current.image = img;
         socket.emit('app.changeImage', img);
         saveCurrent();
     }
     function changeBgImage(image) {
-        var img = image ? image.src : '';
-        vm.current.background = image || '';
+        var img = image ? (image.src ? image.src : image) : '';
+        vm.current.background = img;
         socket.emit('app.changeBgImage', img);
         saveCurrent();
     }

@@ -117,13 +117,13 @@
                         <div class="list-img">
                             <button type="button" class="btn btn-default" title="{{image.src | fileName:true}}"
                                     ng-click="vm.selectImage(image)"
-                                    ng-class="{active: vm.current.image.src == image.src}">
+                                    ng-class="{active: vm.current.image == image.src}">
                                 <img src="" alt="{{image.src}}" class="img-rounded" ng-src="{{image.thumb}}"/>
                             </button>
                         </div>
                         <button type="button" class="btn btn-default"
                                 ng-click="vm.selectBackgroundImage(image)"
-                                ng-class="{active: vm.current.background.src == image.src}">BG</button>
+                                ng-class="{active: vm.current.background == image.src}">BG</button>
                     </div>
                 </div>
             </div>
