@@ -122,7 +122,7 @@ imageShareModule.factory('SessionStorage', ['$window', function($window) {
     }
 
     function persist() {
-        storage.setItem(storageKey, JSON.stringify(data));
+        storage.setItem(storageKey, angular.toJson(data));
     }
 
     function retrieve(forceRefresh) {
@@ -313,7 +313,13 @@ imageShareModule.controller('ManageController', ['$log', 'io', 'CodeName', 'Sess
     var vm = this;
     var socket = io('/');
 
-    // TODO persist images across page refreshes, so that the controller and page can display what image is displayed
+    // Get the current images, or the defaults if there are none
+    vm.current = SessionStorage.get('currentImg', {
+        image: '',
+        background: '',
+        bgColor: '#030303'
+    });
+    console.log(vm.current);
 
     // Get or generate a manager ID
     vm.managerId = SessionStorage.get('managerId');
@@ -327,8 +333,6 @@ imageShareModule.controller('ManageController', ['$log', 'io', 'CodeName', 'Sess
         socket.emit('join', vm.managerId);
     };
 
-    vm.bgColor = '#030303';
-
     // Image handling
     vm.addImage = function() {
         if (vm.imageUrl) {
@@ -337,21 +341,15 @@ imageShareModule.controller('ManageController', ['$log', 'io', 'CodeName', 'Sess
         }
     };
     vm.clearImage = function() {
-        socket.emit('app.changeImage', '');
+        changeImage();
     };
     vm.clearBackgroundImage = function() {
-        socket.emit('app.changeBgImage', '');
+        changeBgImage();
     };
     vm.getImages = getImages;
-    vm.selectImage = function(image) {
-        socket.emit('app.changeImage', image.src);
-    };
-    vm.selectBackgroundImage = function(image) {
-        socket.emit('app.changeBgImage', image.src);
-    };
-    vm.setBgColor = function() {
-        socket.emit('app.changeBgColor', vm.bgColor);
-    };
+    vm.selectImage = changeImage;
+    vm.selectBackgroundImage = changeBgImage;
+    vm.setBgColor = changeBgColor;
 
     // Socket events
     socket.on('connect', function() {
@@ -361,6 +359,14 @@ imageShareModule.controller('ManageController', ['$log', 'io', 'CodeName', 'Sess
         $log.debug('List of images received from server:', images);
         vm.images = images;
     });
+    socket.on('join', function(joinedBy) {
+        if (joinedBy.id !== socket.id) {
+            // Someone joined that isn't us, send the current image and background
+            changeImage(vm.current.image);
+            changeBgImage(vm.current.background);
+            changeBgColor(vm.current.color);
+        }
+    });
 
     // Initialize by getting the images
     getImages();
@@ -368,6 +374,29 @@ imageShareModule.controller('ManageController', ['$log', 'io', 'CodeName', 'Sess
     // Functions
     function getImages() {
         socket.emit('app.getImages');
+    }
+
+    function changeImage(image) {
+        var img = image ? image.src : '';
+        vm.current.image = image || '';
+        socket.emit('app.changeImage', img);
+        saveCurrent();
+    }
+    function changeBgImage(image) {
+        var img = image ? image.src : '';
+        vm.current.background = image || '';
+        socket.emit('app.changeBgImage', img);
+        saveCurrent();
+    }
+    function changeBgColor(color) {
+        var bg = color ? color : '#030303';
+        vm.current.bgColor = bg;
+        socket.emit('app.changeBgColor', bg);
+        saveCurrent();
+    }
+
+    function saveCurrent() {
+        SessionStorage.set('currentImg', vm.current);
     }
 
     function generateManagerId() {

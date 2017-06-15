@@ -31,6 +31,9 @@ module.exports = function(server) {
             console.log('Join:', managerId);
             socket.managerId = managerId;
             socket.join(managerId);
+
+            // Send to everyone in this room that someone has joined
+            socket.to(managerId).emit('join', {id: socket.id, room: managerId});
         });
         // The socket is requesting to leave a room
         socket.on('leave', function(managerId) {
