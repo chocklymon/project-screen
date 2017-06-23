@@ -52,23 +52,13 @@
     <div class="container-fluid">
         <form class="form-horizontal" ng-submit="vm.addImage()">
             <div class="form-group">
-                <div class="col-sm-4">
-                    <div>
-                        <span>Clear:</span>
-                        <button type="button" class="btn btn-default" ng-click="vm.clearImage()">Image</button>
-                        <button type="button" class="btn btn-default" ng-click="vm.clearBackgroundImage()">Background</button>
-                    </div>
+                <div class="col-sm-6 col-md-8">
+                        <input type="text" class="form-control" title="Search for image by name or tag" placeholder="Search images..."
+                               ng-model="vm.searchTerm"
+                               ng-model-options="{debounce: 100}"
+                               ng-change="vm.search()"/>
                 </div>
-                <div class="col-sm-3 col-md-4">
-                    <div class="input-group">
-                        <input type="color" class="form-control" title="Background color" ng-model="vm.current.bgColor"/>
-                        <div class="input-group-btn">
-                            <button type="button" class="btn btn-default"
-                                    ng-click="vm.setBgColor(vm.current.bgColor)">Set BG Color</button>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-sm-5 col-md-4">
+                <div class="col-sm-6 col-md-4">
                     <div class="text-right">
                         <button type="button" class="btn btn-default" title="Refresh images"
                                 ng-click="vm.getImages()">Refresh</button>
@@ -112,18 +102,36 @@
                 </div>
             </div>
             <div class="form-group">
-                <div class="col-xs-6 col-sm-3 col-md-2 col-lg-1" ng-repeat="image in vm.images">
+                <div class="col-xs-6 col-sm-3 col-md-2 col-lg-1" ng-repeat="(id, image) in vm.images">
                     <div class="text-center">
                         <div class="list-img">
-                            <button type="button" class="btn btn-default" title="{{image.src | fileName:true}}"
-                                    ng-click="vm.selectImage(image)"
-                                    ng-class="{active: vm.current.image == image.src}">
-                                <img src="" alt="{{image.src}}" class="img-rounded" ng-src="{{image.thumb}}"/>
+                            <button type="button" class="btn btn-default" title="{{image.name}}"
+                                    ng-click="vm.selectImage(id)"
+                                    ng-class="{active: vm.current.image == id}">
+                                <img src="" alt="{{image.name}}" class="img-rounded" ng-src="{{image.thumb}}"/>
                             </button>
                         </div>
                         <button type="button" class="btn btn-default"
-                                ng-click="vm.selectBackgroundImage(image)"
-                                ng-class="{active: vm.current.background == image.src}">BG</button>
+                                ng-click="vm.selectBackgroundImage(id)"
+                                ng-class="{active: vm.current.background == id}">BG</button>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-xs-7 col-sm-6">
+                    <div>
+                        <span>Clear:</span>
+                        <button type="button" class="btn btn-default" ng-click="vm.clearImage()">Image</button>
+                        <button type="button" class="btn btn-default" ng-click="vm.clearBackgroundImage()">Background</button>
+                    </div>
+                </div>
+                <div class="col-xs-5 col-sm-6 col-md-4 col-md-offset-2">
+                    <div class="input-group">
+                        <input type="color" class="form-control" title="Background color" ng-model="vm.current.bgColor"/>
+                        <div class="input-group-btn">
+                            <button type="button" class="btn btn-default"
+                                    ng-click="vm.setBgColor(vm.current.bgColor)">Set BG Color</button>
+                        </div>
                     </div>
                 </div>
             </div>

@@ -8,7 +8,8 @@ var forEach = require('lodash/forEach');
 
 var IMAGES_DIR = __dirname + '/../public/images';
 var THUMBS_DIR = __dirname + '/../public/thumbs';
-var imagesFileName = __dirname + '/../linkedImages.json';
+var IMAGES_FILE = __dirname + '/../linkedImages.json';
+var FILE_VERSION = 2;
 
 function getExtension(file) {
     var lastDot = file.lastIndexOf('.');
@@ -111,61 +112,140 @@ function getImagesDirectoryList() {
         });
 }
 
+function fileName(text) {
+    var loc = text.lastIndexOf('/');
+    if (loc >= 0) {
+        text = text.substring(loc + 1);
+    }
+    if ((loc = text.lastIndexOf('.')) > 0) {
+        text = text.substring(0, loc);
+    }
+    return text;
+}
+
+function createImagesData(directoryList, data) {
+    // Convert the list of images in the public/images directory into image objects
+    var images = {};
+    var updateData = false;
+    var imageObj;
+    forEach(directoryList, function(img) {
+        imageObj = {
+            src: 'images/' + img,
+            thumb: 'thumbs/' + img
+        };
+        if (data[img]) {
+            imageObj.name = data[img].name;
+            imageObj.tags = data[img].tags;
+            data[img].touched = true;
+        } else {
+            imageObj.name = fileName(img);
+            imageObj.tags = [];
+        }
+        images[img] = imageObj;
+    });
+
+    // Add linked images data, and cleanup old image data
+    forEach(data, function(img, id) {
+        if (img.src) {
+            images[id] = img;
+        } else if (!img.touched) {
+            updateData = true;
+            delete data[id];
+        }
+    });
+
+    if (updateData) {
+        // TODO save new data
+    }
+
+    return images;
+}
+
+
+
+function migrateFile(file, persistIfMigrated) {
+    var migrated = false;
+    if (Array.isArray(file) || file['__version'] < 2) {
+        // Convert to version 2
+        var newFile = {
+            '__version': 2,
+            'images': {}
+        };
+        forEach(file, function(imgSrc) {
+            newFile.images[imgSrc] = {
+                src: imgSrc,
+                thumb: imgSrc,
+                name: fileName(imgSrc),
+                tags: []
+            };
+        });
+        file = newFile;
+        migrated = true;
+    }
+
+    if (migrated && persistIfMigrated) {
+        console.log('File migration performed, saving...');
+        return writeImagesFile(file)
+            .then(function() {
+                return file;
+            });
+    }
+    return file;
+}
+
+function readImagesData() {
+    return fs.readFileAsync(IMAGES_FILE, 'UTF-8')
+        .then(function(contents) {
+            var file = JSON.parse(contents);
+            return migrateFile(file, true);
+        })
+        .catch(function(err) {
+            if (err.code == "ENOENT") {
+                return {
+                    '__version': FILE_VERSION,
+                    'images': {}
+                };
+            } else {
+                return Promise.reject(err);
+            }
+        });
+}
+
+function writeImagesFile(fileContents) {
+    fileContents.__lastModified = new Date();
+    return fs.writeFileAsync(IMAGES_FILE, JSON.stringify(fileContents, null, 2), 'UTF-8');
+}
+
 var ImagesService = {
 
     getImages: function getImages() {
         return getImagesDirectoryList()
             .then(function(imagesList) {
-                return ImagesService.readImagesFile()
+                return readImagesData()
                     .then(function(imagesFile) {
-                        // Convert the list of images in the public/images directory into image objects
-                        var images = [];
-                        forEach(imagesList, function(img) {
-                            images.push({
-                                src: 'images/' + img,
-                                thumb: 'thumbs/' + img
-                            });
-                        });
-                        forEach(imagesFile, function(img) {
-                            images.push({
-                                src: img,
-                                thumb: img
-                            });
-                        });
-                        return images;
+                        return createImagesData(imagesList, imagesFile.images);
                     });
             });
     },
 
-    readImagesFile: function readImagesFile() {
-        return fs.readFileAsync(imagesFileName, 'UTF-8')
-            .then(function(file) {
-                return JSON.parse(file);
-            })
-            .catch(function(err) {
-                if (err.code == "ENOENT") {
-                    return [];
-                } else {
-                    return Promise.reject(err);
-                }
-            });
+    readImagesFile: readImagesData,
+
+    writeImagesFile: function (fileContents) {
+        fileContents = migrateFile(fileContents, false);
+        return writeImagesFile(fileContents);
     },
 
-    writeImagesFile: function writeImagesFile(fileContents) {
-        return fs.writeFileAsync(imagesFileName, JSON.stringify(fileContents, null, 2), 'UTF-8');
-    },
-
-    addToImagesFile: function addToImagesFile(addMe) {
+    addImageByUrl: function addImageByUrl(url) {
         // Get the current images list
-        return ImagesService.readImagesFile()
+        return readImagesData()
             .then(function(file) {
                 // Add the URL
-                for (var i = 0; i < file.length; i++) {
-                    if (file[i] == addMe) {
-                        return Promise.reject('Image already added');
-                    }
-                }
-                file.push(addMe);
+                file.images[url] = {
+                    src: url,
+                    thumb: url,
+                    name: fileName(url),
+                    tags: []
+                };
 
                 // Save back to disk
                 return ImagesService.writeImagesFile(file);

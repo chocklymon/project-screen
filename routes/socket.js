@@ -44,7 +44,7 @@ module.exports = function(server) {
 
         // Add and get images
         socket.on('app.addImage', function(imageUrl) {
-            imagesService.addToImagesFile(imageUrl)
+            imagesService.addImageByUrl(imageUrl)
                 .then(function() {
                     sendImagesTo(socket);
                 })
