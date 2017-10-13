@@ -143,6 +143,56 @@ imageShareModule.factory('levenshtein', [function() {
     // END Licensed Code
 }]);
 
+imageShareModule.factory('ImageSearch', ['levenshtein', function(levenshtein) {
+    function myExtend(src) {
+        var destinations = Array.prototype.slice.call(arguments, 1);
+        angular.forEach(destinations, function(dst) {
+            angular.forEach(dst, function(value, index) {
+                if (!(index in src)) {
+                    src[index] = value;
+                }
+            });
+        });
+        return src;
+    }
+    function search(needle, imagesHaystack) {
+        if (!needle) {
+            // Blank search term
+            return imagesHaystack;
+        }
+        var searchFor = needle.toLowerCase();
+        var distance, closestDistance = 3; // Start with a levenshtein distance of 3
+        var substringMatches = {};
+        var tagMatches = {};
+        var nearMatches = {};
+        angular.forEach(imagesHaystack, function (img, id) {
+            var lowerCaseName = img.name.toLowerCase();
+            if (lowerCaseName.indexOf(searchFor) >= 0) {
+                // Exact substring
+                substringMatches[id] = img;
+            } else {
+                distance = levenshtein(searchFor, lowerCaseName);
+                if (distance <= closestDistance) {
+                    // Found a close edit
+                    if (distance < closestDistance) {
+                        // Closer, remove further away matches
+                        closestDistance = distance;
+                        nearMatches = {};
+                    }
+                    nearMatches[id] = img;
+                }
+            }
+            angular.forEach(img.tags, function (tag) {
+                if (tag.toLowerCase() === searchFor) {
+                    tagMatches[id] = img;
+                }
+            });
+        });
+        return myExtend(substringMatches, tagMatches, nearMatches);
+    }
+    return search;
+}]);
+
 imageShareModule.factory('SessionStorage', ['$window', function($window) {
     var
         /** The key used to retrieve and set data from the local storage object. */
@@ -352,9 +402,9 @@ imageShareModule.controller('DisplayController', ['$log', '$rootScope', '$routeP
 }]);
 
 imageShareModule.controller('ManageController', [
-    '$log', 'io', 'levenshtein', 'CodeName', 'SessionStorage',
+    '$log', 'io', 'CodeName', 'ImageSearch', 'SessionStorage',
     function(
-        $log, io, levenshtein, CodeName, SessionStorage
+        $log, io, CodeName, ImageSearch, SessionStorage
     ) {
     var vm = this;
     var socket = io('/');
@@ -398,35 +448,8 @@ imageShareModule.controller('ManageController', [
     vm.setBgColor = changeBgColor;
 
     vm.search = function() {
-        // TODO search tags
         if (vm.searchTerm) {
-            var searchFor = vm.searchTerm.toLowerCase();
-            var distance, closestDistance = 5; // Start with a levenshtein distance of 5
-            var searchResults = {};
-            var nearMatches = {};
-            var lowerCaseName;
-            angular.forEach(allImages, function(img, id) {
-                // TODO search tags
-                var lowerCaseName = img.name.toLowerCase();
-                if (lowerCaseName.indexOf(searchFor) >= 0) {
-                    // Exact substring
-                    searchResults[id] = img;
-                } else {
-                    distance = levenshtein(searchFor, lowerCaseName);
-                    if (distance <= closestDistance) {
-                        // Found a close edit
-                        if (distance < closestDistance) {
-                            // Closer, remove further away matches
-                            closestDistance = distance;
-                            nearMatches = {};
-                        }
-                        nearMatches[id] = img;
-                    }
-                }
-            });
-            // Merge the search results with the near matches
-            angular.extend(searchResults, nearMatches);
-            vm.images = searchResults;
+            vm.images = ImageSearch(vm.searchTerm, allImages);
         } else if (vm.images != allImages) {
             vm.images = allImages;
         }

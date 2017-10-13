@@ -52,6 +52,7 @@ function getImagesInDir(dir) {
 }
 
 function getImagesDirectoryList() {
+    // TODO add caching?
     return Promise.all([
             getImagesInDir(IMAGES_DIR),
             getImagesInDir(THUMBS_DIR)
@@ -216,6 +217,7 @@ function migrateFile(file, persistIfMigrated) {
 }
 
 function readImagesData() {
+    // TODO provide caching?
     return fs.readFileAsync(IMAGES_FILE, 'UTF-8')
         .then(function(contents) {
             var file = JSON.parse(contents);
