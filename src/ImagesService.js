@@ -9,7 +9,7 @@ var forEach = require('lodash/forEach');
 var IMAGES_DIR = __dirname + '/../public/images';
 var THUMBS_DIR = __dirname + '/../public/thumbs';
 var IMAGES_FILE = __dirname + '/../linkedImages.json';
-var FILE_VERSION = 2;
+var FILE_VERSION = 3;
 
 function getExtension(file) {
     var lastDot = file.lastIndexOf('.');
@@ -131,13 +131,17 @@ function createImagesData(directoryList, data) {
     forEach(directoryList, function(img) {
         imageObj = {
             src: 'images/' + img,
-            thumb: 'thumbs/' + img
+            thumb: 'thumbs/' + img,
+            external: false
         };
         if (data[img]) {
+            // Existing image
             imageObj.name = data[img].name;
             imageObj.tags = data[img].tags;
             data[img].touched = true;
         } else {
+            // New image
+            updateData = true;
             imageObj.name = fileName(img);
             imageObj.tags = [];
         }
@@ -148,17 +152,26 @@ function createImagesData(directoryList, data) {
     forEach(data, function(img, id) {
         if (img.src) {
             images[id] = img;
-        } else if (!img.touched) {
+        } else if (!img.external && !img.touched) {
+            // Existing image removed
             updateData = true;
             delete data[id];
         }
     });
 
     if (updateData) {
-        // TODO save new data
+        // The data has been modified, save back to disk
+        var file = {
+            '__version': FILE_VERSION, // Since this function is called after the migration it will be the latest version
+            'images': images
+        };
+        return writeImagesFile(file)
+            .then(function() {
+                return images;
+            });
     }
 
-    return images;
+    return Promise.resolve(images);
 }
 
 
@@ -183,6 +196,15 @@ function migrateFile(file, persistIfMigrated) {
         migrated = true;
     }
 
+    if (file['__version'] === 2) {
+        // Migrate to version 3
+        forEach(file.images, function(img) {
+            img.external = true;
+        });
+        file['__version'] = 3;
+        migrated = true;
+    }
+
     if (migrated && persistIfMigrated) {
         console.log('File migration performed, saving...');
         return writeImagesFile(file)
@@ -190,7 +212,7 @@ function migrateFile(file, persistIfMigrated) {
                 return file;
             });
     }
-    return file;
+    return Promise.resolve(file);
 }
 
 function readImagesData() {
@@ -216,17 +238,19 @@ function writeImagesFile(fileContents) {
     return fs.writeFileAsync(IMAGES_FILE, JSON.stringify(fileContents, null, 2), 'UTF-8');
 }
 
+function getImages() {
+    return getImagesDirectoryList()
+        .then(function(imagesList) {
+            return readImagesData()
+                .then(function(imagesFile) {
+                    return createImagesData(imagesList, imagesFile.images);
+                });
+        });
+}
+
 var ImagesService = {
 
-    getImages: function getImages() {
-        return getImagesDirectoryList()
-            .then(function(imagesList) {
-                return readImagesData()
-                    .then(function(imagesFile) {
-                        return createImagesData(imagesList, imagesFile.images);
-                    });
-            });
-    },
+    getImages: getImages,
 
     readImagesFile: readImagesData,
 
@@ -244,7 +268,8 @@ var ImagesService = {
                     src: url,
                     thumb: url,
                     name: fileName(url),
-                    tags: []
+                    tags: [],
+                    external: true
                 };
 
                 // Save back to disk
