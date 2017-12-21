@@ -510,6 +510,51 @@ imageShareModule.controller('ManageController', [
     }
 }]);
 
+imageShareModule.controller('EditImageController', ['$log', function($log) {
+    var vm = this;
+    vm.visible = false;
+
+    vm.ifEnter = function($event, call) {
+        if ($event.keyCode === 13) {
+            call();
+        }
+    };
+    vm.close = function() {
+        vm.visible = false;
+    };
+    vm.save = function() {
+        $log.log('Save', vm.image);
+        // TODO
+    };
+    vm.addTags = function() {
+        if (vm.newTags) {
+            var newTags = vm.newTags.split(','), i, tag;
+            for (i = 0; i < newTags.length; i++) {
+                tag = newTags[i].trim();
+                if (tag) {
+                    vm.image.tags.push(tag);
+                }
+            }
+            vm.image.tags.sort();
+            vm.newTags = '';
+        }
+    };
+    vm.removeTag = function($index) {
+        if ($index >= 0 && $index < vm.image.tags.length) {
+            vm.image.tags.splice($index, 1);
+        }
+    };
+
+    // TODO
+    vm.image = {
+        "src": "images/spectator.jpg",
+        "thumb": "thumbs/spectator.jpg",
+        "external": false,
+        "name": "spectator",
+        "tags": ["monster","magic"]
+    };
+}]);
+
 imageShareModule.config(['$routeProvider', function($routeProvider) {
     $routeProvider
         .when('/display/:managerId', {

@@ -53,10 +53,10 @@
         <form class="form-horizontal" ng-submit="vm.addImage()">
             <div class="form-group">
                 <div class="col-sm-6 col-md-8">
-                        <input type="text" class="form-control" title="Search for image by name or tag" placeholder="Search images..."
-                               ng-model="vm.searchTerm"
-                               ng-model-options="{debounce: 100}"
-                               ng-change="vm.search()"/>
+                    <input type="text" class="form-control" title="Search for image by name or tag" placeholder="Search images..."
+                           ng-model="vm.searchTerm"
+                           ng-model-options="{debounce: 100}"
+                           ng-change="vm.search()"/>
                 </div>
                 <div class="col-sm-6 col-md-4">
                     <div class="text-right">
@@ -147,6 +147,59 @@
             </div>
         </form>
     </div>
+    <div ng-include="'EditImageTemplate.html'" ng-controller="EditImageController as vm"></div>
+</script>
+<script type="text/ng-template" id="EditImageTemplate.html">
+    <div class="modal fade" tabindex="-1" role="dialog" ng-class="{'in': vm.visible}">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" aria-label="Close"
+                            ng-click="vm.close()"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title">Edit Image</h4>
+                </div>
+                <div class="modal-body">
+                    <form class="" ng-submit="vm.save()">
+                        <div class="form-group">
+                            <label for="editImageName">Name</label>
+                            <input type="text" class="form-control" id="editImageName"
+                                   ng-model="vm.image.name" ng-keyup="vm.ifEnter($event, vm.save)" placeholder="Image name"/>
+                        </div>
+                        <div class="form-group">
+                            <label for="editImageTag">Tags</label>
+                            <div class="row">
+                                <div class="col-xs-12">
+                                    <span class="tag" ng-repeat="tag in vm.image.tags">
+                                        <span class="label label-default">
+                                            <span>{{tag}}</span><button type="button" class="btn btn-link"
+                                                                        aria-label="Remove" title="Remove"
+                                                                        ng-click="vm.removeTag($index)"><span aria-hidden="true">&times;</span></button>
+                                        </span><span ng-if="!$last">,</span>
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="editImageTag"
+                                       ng-model="vm.newTags" ng-keyup="vm.ifEnter($event, vm.addTags)"
+                                       placeholder="Add or or more tags separated by commas"/>
+                                <span class="input-group-btn">
+                                    <button type="button" class="btn btn-default" ng-click="vm.addTags()">Add</button>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <span class="text-muted">URL: {{vm.image.src}}</span>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" ng-click="vm.close()">Close</button>
+                    <button type="button" class="btn btn-primary" ng-click="vm.save()">Save changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade in" ng-show="vm.visible"></div>
 </script>
 </body>
 </html>
