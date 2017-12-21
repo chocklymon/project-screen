@@ -39,3 +39,8 @@ public/images/*.jpeg
 public/images/*.png
 public/images/*.gif
 public/images/*.bmp
+public/thumbs/*.jpg
+public/thumbs/*.jpeg
+public/thumbs/*.png
+public/thumbs/*.gif
+public/thumbs/*.bmp

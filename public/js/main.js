@@ -88,6 +88,111 @@ imageShareModule.factory('CodeName', [function() {
     };
 }]);
 
+imageShareModule.factory('levenshtein', [function() {
+    // START Licensed Code
+    // Modified from https://gist.github.com/andrei-m/982927#gistcomment-1888863
+    /*
+     Copyright (c) 2011 Andrei Mackenzie & Milot Mirdita
+     Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+     The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+     THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+     */
+    return function(a, b) {
+        if (a.length === 0) {
+            return b.length;
+        }
+        if (b.length === 0) {
+            return a.length;
+        }
+        var tmp, i, j, prev, val, row;
+        // swap to save some memory O(min(a,b)) instead of O(a)
+        if (a.length > b.length) {
+            tmp = a;
+            a = b;
+            b = tmp;
+        }
+
+        row = new Array(a.length + 1);
+        // init the row
+        for (i = 0; i <= a.length; i++) {
+            row[i] = i
+        }
+
+        // fill in the rest
+        for (i = 1; i <= b.length; i++) {
+            prev = i;
+            for (j = 1; j <= a.length; j++) {
+                if (b[i - 1] === a[j - 1]) {
+                    val = row[j - 1]; // match
+                } else {
+                    val = Math.min(
+                        row[j - 1] + 1, // substitution
+                        Math.min(
+                            prev + 1,   // insertion
+                            row[j] + 1  // deletion
+                        )
+                    );
+                }
+                row[j - 1] = prev;
+                prev = val;
+            }
+            row[a.length] = prev;
+        }
+        return row[a.length];
+    }
+    // END Licensed Code
+}]);
+
+imageShareModule.factory('ImageSearch', ['levenshtein', function(levenshtein) {
+    function myExtend(src) {
+        var destinations = Array.prototype.slice.call(arguments, 1);
+        angular.forEach(destinations, function(dst) {
+            angular.forEach(dst, function(value, index) {
+                if (!(index in src)) {
+                    src[index] = value;
+                }
+            });
+        });
+        return src;
+    }
+    function search(needle, imagesHaystack) {
+        if (!needle) {
+            // Blank search term
+            return imagesHaystack;
+        }
+        var searchFor = needle.toLowerCase();
+        var distance, closestDistance = 3; // Start with a levenshtein distance of 3
+        var substringMatches = {};
+        var tagMatches = {};
+        var nearMatches = {};
+        angular.forEach(imagesHaystack, function (img, id) {
+            var lowerCaseName = img.name.toLowerCase();
+            if (lowerCaseName.indexOf(searchFor) >= 0) {
+                // Exact substring
+                substringMatches[id] = img;
+            } else {
+                distance = levenshtein(searchFor, lowerCaseName);
+                if (distance <= closestDistance) {
+                    // Found a close edit
+                    if (distance < closestDistance) {
+                        // Closer, remove further away matches
+                        closestDistance = distance;
+                        nearMatches = {};
+                    }
+                    nearMatches[id] = img;
+                }
+            }
+            angular.forEach(img.tags, function (tag) {
+                if (tag.toLowerCase() === searchFor) {
+                    tagMatches[id] = img;
+                }
+            });
+        });
+        return myExtend(substringMatches, tagMatches, nearMatches);
+    }
+    return search;
+}]);
+
 imageShareModule.factory('SessionStorage', ['$window', function($window) {
     var
         /** The key used to retrieve and set data from the local storage object. */
@@ -122,7 +227,7 @@ imageShareModule.factory('SessionStorage', ['$window', function($window) {
     }
 
     function persist() {
-        storage.setItem(storageKey, JSON.stringify(data));
+        storage.setItem(storageKey, angular.toJson(data));
     }
 
     function retrieve(forceRefresh) {
@@ -344,11 +449,21 @@ imageShareModule.controller('DisplayController', ['$log', '$rootScope', '$routeP
     });
 }]);
 
-imageShareModule.controller('ManageController', ['$log', 'io', 'CodeName', 'SessionStorage', function($log, io, CodeName, SessionStorage) {
+imageShareModule.controller('ManageController', [
+    '$log', 'io', 'CodeName', 'ImageSearch', 'SessionStorage',
+    function(
+        $log, io, CodeName, ImageSearch, SessionStorage
+    ) {
     var vm = this;
     var socket = io('/');
+    var allImages = [];
 
-    // TODO persist images across page refreshes, so that the controller and page can display what image is displayed
+    // Get the current images, or the defaults if there are none
+    vm.current = SessionStorage.get('currentImg', {
+        image: '',
+        background: '',
+        bgColor: '#030303'
+    });
 
     // Get or generate a manager ID
     vm.managerId = SessionStorage.get('managerId');
@@ -362,8 +477,6 @@ imageShareModule.controller('ManageController', ['$log', 'io', 'CodeName', 'Sess
         socket.emit('join', vm.managerId);
     };
 
-    vm.bgColor = '#030303';
-
     // Image handling
     vm.addImage = function() {
         if (vm.imageUrl) {
@@ -372,20 +485,22 @@ imageShareModule.controller('ManageController', ['$log', 'io', 'CodeName', 'Sess
         }
     };
     vm.clearImage = function() {
-        socket.emit('app.changeImage', '');
+        changeImage('');
     };
     vm.clearBackgroundImage = function() {
-        socket.emit('app.changeBgImage', '');
+        changeBgImage('');
     };
     vm.getImages = getImages;
-    vm.selectImage = function(image) {
-        socket.emit('app.changeImage', image);
-    };
-    vm.selectBackgroundImage = function(image) {
-        socket.emit('app.changeBgImage', image);
-    };
-    vm.setBgColor = function() {
-        socket.emit('app.changeBgColor', vm.bgColor);
+    vm.selectImage = changeImage;
+    vm.selectBackgroundImage = changeBgImage;
+    vm.setBgColor = changeBgColor;
+
+    vm.search = function() {
+        if (vm.searchTerm) {
+            vm.images = ImageSearch(vm.searchTerm, allImages);
+        } else if (vm.images != allImages) {
+            vm.images = allImages;
+        }
     };
 
     // Socket events
@@ -394,7 +509,16 @@ imageShareModule.controller('ManageController', ['$log', 'io', 'CodeName', 'Sess
     });
     socket.on('app.images', function(images) {
         $log.debug('List of images received from server:', images);
-        vm.images = images;
+        allImages = images;
+        vm.images = allImages;
+    });
+    socket.on('join', function(joinedBy) {
+        if (joinedBy.id !== socket.id) {
+            // Someone joined that isn't us, send the current image and background
+            changeImage(vm.current.image);
+            changeBgImage(vm.current.background);
+            changeBgColor(vm.current.color);
+        }
     });
 
     // Initialize by getting the images
@@ -403,6 +527,29 @@ imageShareModule.controller('ManageController', ['$log', 'io', 'CodeName', 'Sess
     // Functions
     function getImages() {
         socket.emit('app.getImages');
+    }
+
+    function changeImage(id) {
+        var imgSrc = (allImages[id]) ? allImages[id].src : '';
+        vm.current.image = id;
+        socket.emit('app.changeImage', imgSrc);
+        saveCurrent();
+    }
+    function changeBgImage(id) {
+        var imgSrc = (allImages[id]) ? allImages[id].src : '';
+        vm.current.background = id;
+        socket.emit('app.changeBgImage', imgSrc);
+        saveCurrent();
+    }
+    function changeBgColor(color) {
+        var bg = color ? color : '#030303';
+        vm.current.bgColor = bg;
+        socket.emit('app.changeBgColor', bg);
+        saveCurrent();
+    }
+
+    function saveCurrent() {
+        SessionStorage.set('currentImg', vm.current);
     }
 
     function generateManagerId() {
