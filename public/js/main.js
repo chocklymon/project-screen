@@ -444,24 +444,30 @@ imageShareModule.controller('ManageController', [
     vm.clearBackgroundImage = function() {
         changeBgImage('');
     };
-    vm.editImage = function(image) {
+    vm.editImage = function(id, image) {
         var modal = $uibModal.open({
             templateUrl: 'EditImageTemplate.html',
             controller: 'EditImageController',
             controllerAs: 'vm',
             resolve: {
                 image: function() {
-                    return image;
+                    return {
+                        id: id,
+                        name: image.name,
+                        src: image.src,
+                        tags: image.tags
+                    };
                 }
             }
         });
 
         modal.result
-            .then(function(r) {
-                $log.debug('Modal closed', r);
+            .then(function(img) {
+                $log.debug('Saving image', img);
+                socket.emit('app.patchImage', img);
             })
             .catch(function(e) {
-                $log.debug('Modal dismissed', e);
+                $log.debug('Modal closed. Reason:', e);
             });
     };
     vm.getImages = getImages;
@@ -485,6 +491,13 @@ imageShareModule.controller('ManageController', [
         $log.debug('List of images received from server:', images);
         allImages = images;
         vm.images = allImages;
+    });
+    socket.on('app.patchImage', function(r) {
+        $log.log('Image patched', r);
+        // TODO display save
+
+        // Refresh the images
+        getImages();
     });
     socket.on('join', function(joinedBy) {
         if (joinedBy.id !== socket.id) {
@@ -544,8 +557,7 @@ imageShareModule.controller('EditImageController', ['$log', '$uibModalInstance',
         $uibModalInstance.dismiss('cancel');
     };
     vm.save = function() {
-        $log.log('Save', vm.image);
-        // TODO
+        $uibModalInstance.close(vm.image);
     };
     vm.addTags = function() {
         if (vm.newTags) {
@@ -553,7 +565,7 @@ imageShareModule.controller('EditImageController', ['$log', '$uibModalInstance',
             for (i = 0; i < newTags.length; i++) {
                 tag = newTags[i].trim();
                 if (tag) {
-                    vm.image.tags.push(tag);
+                    vm.image.tags.push(tag.toLowerCase());
                 }
             }
             vm.image.tags.sort();

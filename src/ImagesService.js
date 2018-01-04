@@ -270,6 +270,49 @@ function getImages() {
         });
 }
 
+function isValidUpdate(image) {
+    var reason = false;
+    if (image && typeof image === 'object') {
+        if (!('id' in image)) {
+            reason = 'No image id';
+        }
+    } else {
+        reason = 'No image object provided';
+    }
+    return reason;
+}
+
+function updateImage(image) {
+    var reason = isValidUpdate(image);
+    if (reason === false) {
+        // Can update
+        return readImagesData()
+            .then(function(file) {
+                if (!(image.id in file.images)) {
+                    throw {'error': 'Invalid image update', 'reason': 'No image with given id'}
+                }
+
+                // Update editable attributes, if in the provided image object
+                var img = file.images[image.id];
+                if ('name' in image) {
+                    img.name = image.name;
+                }
+                if ('tags' in image && Array.isArray(image.tags)) {
+                    img.tags = image.tags.sort();
+                    forEach(img.tags, function(tag, i) {
+                        img.tags[i] = tag.toLowerCase();
+                    })
+                }
+                file.images[image.id] = img;
+
+                return ImagesService.writeImagesFile(file);
+            });
+    } else {
+        // Invalid image object
+        return Promise.reject({'error': 'Invalid image update', 'reason': reason});
+    }
+}
+
 var ImagesService = {
 
     getImages: getImages,
@@ -277,9 +320,13 @@ var ImagesService = {
     readImagesFile: readImagesData,
 
     writeImagesFile: function (fileContents) {
-        fileContents = migrateFile(fileContents, false);
-        return writeImagesFile(fileContents);
+        return migrateFile(fileContents, false)
+            .then(function(file) {
+                return writeImagesFile(file);
+            });
     },
+
+    updateImage: updateImage,
 
     addImageByUrl: function addImageByUrl(url) {
         // Get the current images list
