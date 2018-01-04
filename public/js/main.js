@@ -166,11 +166,14 @@ imageShareModule.factory('ImageSearch', ['levenshtein', function(levenshtein) {
         var tagMatches = {};
         var nearMatches = {};
         angular.forEach(imagesHaystack, function (img, id) {
+            // Search for substring matches, near matches, and tag matches
             var lowerCaseName = img.name.toLowerCase();
             if (lowerCaseName.indexOf(searchFor) >= 0) {
                 // Exact substring
                 substringMatches[id] = img;
-            } else {
+            } else if (lowerCaseName.length - searchFor.length <= closestDistance) {
+                // Check the edit distance
+                // Since levenshtein runs in O(nm) only run when the edit distance can be less than the closest distance
                 distance = levenshtein(searchFor, lowerCaseName);
                 if (distance <= closestDistance) {
                     // Found a close edit
@@ -183,6 +186,7 @@ imageShareModule.factory('ImageSearch', ['levenshtein', function(levenshtein) {
                 }
             }
             if (_.sortedIndexOf(img.tags, searchFor) !== -1) {
+                // Tag match
                 tagMatches[id] = img;
             }
         });
