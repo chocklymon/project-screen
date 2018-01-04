@@ -3,7 +3,7 @@
  */
 'use strict';
 
-var imageShareModule = angular.module('imageShare', ['ngAnimate', 'ngRoute']);
+var imageShareModule = angular.module('imageShare', ['ngAnimate', 'ngRoute', 'ui.bootstrap']);
 
 imageShareModule.factory('CodeName', [function() {
     // Just adjectives
@@ -182,11 +182,9 @@ imageShareModule.factory('ImageSearch', ['levenshtein', function(levenshtein) {
                     nearMatches[id] = img;
                 }
             }
-            angular.forEach(img.tags, function (tag) {
-                if (tag.toLowerCase() === searchFor) {
-                    tagMatches[id] = img;
-                }
-            });
+            if (_.sortedIndexOf(img.tags, searchFor) !== -1) {
+                tagMatches[id] = img;
+            }
         });
         return myExtend(substringMatches, tagMatches, nearMatches);
     }
@@ -402,9 +400,9 @@ imageShareModule.controller('DisplayController', ['$log', '$rootScope', '$routeP
 }]);
 
 imageShareModule.controller('ManageController', [
-    '$log', 'io', 'CodeName', 'ImageSearch', 'SessionStorage',
+    '$log', '$uibModal', 'io', 'CodeName', 'ImageSearch', 'SessionStorage',
     function(
-        $log, io, CodeName, ImageSearch, SessionStorage
+        $log, $uibModal, io, CodeName, ImageSearch, SessionStorage
     ) {
     var vm = this;
     var socket = io('/');
@@ -441,6 +439,26 @@ imageShareModule.controller('ManageController', [
     };
     vm.clearBackgroundImage = function() {
         changeBgImage('');
+    };
+    vm.editImage = function(image) {
+        var modal = $uibModal.open({
+            templateUrl: 'EditImageTemplate.html',
+            controller: 'EditImageController',
+            controllerAs: 'vm',
+            resolve: {
+                image: function() {
+                    return image;
+                }
+            }
+        });
+
+        modal.result
+            .then(function(r) {
+                $log.debug('Modal closed', r);
+            })
+            .catch(function(e) {
+                $log.debug('Modal dismissed', e);
+            });
     };
     vm.getImages = getImages;
     vm.selectImage = changeImage;
@@ -510,9 +528,8 @@ imageShareModule.controller('ManageController', [
     }
 }]);
 
-imageShareModule.controller('EditImageController', ['$log', function($log) {
+imageShareModule.controller('EditImageController', ['$log', '$uibModalInstance', 'image', function($log, $uibModalInstance, image) {
     var vm = this;
-    vm.visible = false;
 
     vm.ifEnter = function($event, call) {
         if ($event.keyCode === 13) {
@@ -520,7 +537,7 @@ imageShareModule.controller('EditImageController', ['$log', function($log) {
         }
     };
     vm.close = function() {
-        vm.visible = false;
+        $uibModalInstance.dismiss('cancel');
     };
     vm.save = function() {
         $log.log('Save', vm.image);
@@ -545,14 +562,7 @@ imageShareModule.controller('EditImageController', ['$log', function($log) {
         }
     };
 
-    // TODO
-    vm.image = {
-        "src": "images/spectator.jpg",
-        "thumb": "thumbs/spectator.jpg",
-        "external": false,
-        "name": "spectator",
-        "tags": ["monster","magic"]
-    };
+    vm.image = image;
 }]);
 
 imageShareModule.config(['$routeProvider', function($routeProvider) {
