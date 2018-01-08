@@ -1,6 +1,4 @@
-/**
- * Created by coakley on 3/3/17.
- */
+/* globals angular:false */
 'use strict';
 
 var imageShareModule = angular.module('imageShare', ['ngAnimate', 'ngRoute', 'ui.bootstrap']);
@@ -143,7 +141,82 @@ imageShareModule.factory('levenshtein', [function() {
     // END Licensed Code
 }]);
 
-imageShareModule.factory('ImageSearch', ['levenshtein', function(levenshtein) {
+imageShareModule.factory('Images', ['$log', 'rootSocket', function($log, rootSocket) {
+    // - Global Variables -
+    var refreshTags = true,
+        tags = {},
+        images = [],
+        socket = null,
+        listeners = [];
+
+    // - Utility Functions -
+    function getSocket() {
+        if (socket === null) {
+            // Initialize the socket an listen for incoming images
+            socket = rootSocket.get();
+
+            socket.on('app.images', function (imgs) {
+                $log.debug('List of images received from server:', imgs);
+                refreshTags = true;
+                images = imgs;
+
+                angular.forEach(listeners, function (cb) {
+                    cb(images);
+                });
+            });
+        }
+        return socket;
+    }
+
+    function getTags() {
+        if (refreshTags) {
+            tags = {};
+            var i, l, tag;
+            angular.forEach(images, function (img) {
+                for (i = 0, l = img.tags.length; i < l; i++) {
+                    tag = img.tags[i];
+                    if (tag in tags) {
+                        tags[tag].count++;
+                    } else {
+                        tags[tag] = {count: 1, images: []};
+                    }
+                    tags[tag].images.push(img);
+                }
+            });
+            refreshTags = false;
+        }
+        return tags;
+    }
+
+    // - Image IO -
+    function addImage(url) {
+        if (url) {
+            getSocket().emit('app.addImage', url);
+        }
+    }
+
+    function updateImage(image) {
+        getSocket().emit('app.patchImage', image);
+    }
+
+    function getImages() {
+        getSocket().emit('app.getImages');
+    }
+
+    function registerOnChangeListener(func) {
+        listeners.push(func);
+    }
+
+    return {
+        add: addImage,
+        update: updateImage,
+        getTags: getTags,
+        onChange: registerOnChangeListener,
+        triggerGetImages: getImages
+    };
+}]);
+
+imageShareModule.filter('image', ['levenshtein', 'Images', function(levenshtein, Images) {
     function myExtend(src) {
         var destinations = Array.prototype.slice.call(arguments, 1);
         angular.forEach(destinations, function(dst) {
@@ -155,6 +228,7 @@ imageShareModule.factory('ImageSearch', ['levenshtein', function(levenshtein) {
         });
         return src;
     }
+
     function search(needle, imagesHaystack) {
         if (!needle) {
             // Blank search term
@@ -192,7 +266,24 @@ imageShareModule.factory('ImageSearch', ['levenshtein', function(levenshtein) {
         });
         return myExtend(substringMatches, tagMatches, nearMatches);
     }
-    return search;
+
+    function getTagMatches(tag) {
+        var t = Images.getTags();
+        if (tag in t) {
+            return t[tag].images;
+        } else {
+            return {};
+        }
+    }
+
+    function imageFilter(input, needle, tag) {
+        if (tag) {
+            input = getTagMatches(tag.toLowerCase());
+        }
+        return search(needle, input);
+    }
+
+    return imageFilter;
 }]);
 
 imageShareModule.factory('SessionStorage', ['$window', function($window) {
@@ -325,6 +416,19 @@ imageShareModule.factory('io', ['$log', '$rootScope', function($log, $rootScope)
     return SocketFactory;
 }]);
 
+imageShareModule.factory('rootSocket', ['io', function(io) {
+    var rootSocket = false;
+    function getRootSocket() {
+        if (rootSocket === false) {
+            rootSocket = io('/');
+        }
+        return rootSocket
+    }
+    return {
+        get: getRootSocket
+    }
+}]);
+
 imageShareModule.directive('imageLoad', ['$rootScope', function($rootScope) {
     return {
         restrict: 'A',
@@ -353,9 +457,9 @@ imageShareModule.directive('shareLink', ['$location', function($location) {
     };
 }]);
 
-imageShareModule.controller('DisplayController', ['$log', '$rootScope', '$routeParams', '$window', 'io', function($log, $rootScope, $routeParams, $window, io) {
+imageShareModule.controller('DisplayController', ['$log', '$rootScope', '$routeParams', '$window', 'rootSocket', function($log, $rootScope, $routeParams, $window, rootSocket) {
     var vm = this;
-    var socket = io('/');
+    var socket = rootSocket.get();
 
     vm.pageHeight = $window.innerHeight + 'px';
     vm.bgColor = '#030303';
@@ -404,13 +508,12 @@ imageShareModule.controller('DisplayController', ['$log', '$rootScope', '$routeP
 }]);
 
 imageShareModule.controller('ManageController', [
-    '$log', '$uibModal', 'io', 'CodeName', 'ImageSearch', 'SessionStorage',
+    '$log', '$uibModal', 'rootSocket', 'CodeName', 'Images', 'SessionStorage',
     function(
-        $log, $uibModal, io, CodeName, ImageSearch, SessionStorage
+        $log, $uibModal, rootSocket, CodeName, Images, SessionStorage
     ) {
     var vm = this;
-    var socket = io('/');
-    var allImages = [];
+    var socket = rootSocket.get();
 
     // Get the current images, or the defaults if there are none
     vm.current = SessionStorage.get('currentImg', {
@@ -434,7 +537,7 @@ imageShareModule.controller('ManageController', [
     // Image handling
     vm.addImage = function() {
         if (vm.imageUrl) {
-            socket.emit('app.addImage', vm.imageUrl);
+            Images.add(vm.imageUrl);
             vm.imageUrl = '';
         }
     };
@@ -464,7 +567,7 @@ imageShareModule.controller('ManageController', [
         modal.result
             .then(function(img) {
                 $log.debug('Saving image', img);
-                socket.emit('app.patchImage', img);
+                Images.update(img);
             })
             .catch(function(e) {
                 $log.debug('Modal closed. Reason:', e);
@@ -475,22 +578,9 @@ imageShareModule.controller('ManageController', [
     vm.selectBackgroundImage = changeBgImage;
     vm.setBgColor = changeBgColor;
 
-    vm.search = function() {
-        if (vm.searchTerm) {
-            vm.images = ImageSearch(vm.searchTerm, allImages);
-        } else if (vm.images != allImages) {
-            vm.images = allImages;
-        }
-    };
-
     // Socket events
     socket.on('connect', function() {
         socket.emit('join', vm.managerId);
-    });
-    socket.on('app.images', function(images) {
-        $log.debug('List of images received from server:', images);
-        allImages = images;
-        vm.images = allImages;
     });
     socket.on('app.patchImage', function(r) {
         $log.log('Image patched', r);
@@ -509,21 +599,37 @@ imageShareModule.controller('ManageController', [
     });
 
     // Initialize by getting the images
+    Images.onChange(function(images) {
+        vm.images = images;
+        vm.tags = getTags();
+    });
     getImages();
 
     // Functions
     function getImages() {
-        socket.emit('app.getImages');
+        Images.triggerGetImages();
+    }
+
+    function getTags() {
+        var tags = [],
+            rawTags = Images.getTags();
+        angular.forEach(rawTags, function(info, tag) {
+            tags.push({
+                tag: tag,
+                count: info.count
+            });
+        });
+        return tags;
     }
 
     function changeImage(id) {
-        var imgSrc = (allImages[id]) ? allImages[id].src : '';
+        var imgSrc = (vm.images[id]) ? vm.images[id].src : '';
         vm.current.image = id;
         socket.emit('app.changeImage', imgSrc);
         saveCurrent();
     }
     function changeBgImage(id) {
-        var imgSrc = (allImages[id]) ? allImages[id].src : '';
+        var imgSrc = (vm.images[id]) ? vm.images[id].src : '';
         vm.current.background = id;
         socket.emit('app.changeBgImage', imgSrc);
         saveCurrent();

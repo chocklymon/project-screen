@@ -56,8 +56,7 @@
                 <div class="col-sm-6 col-md-8">
                     <input type="text" class="form-control" title="Search for image by name or tag" placeholder="Search images..."
                            ng-model="vm.searchTerm"
-                           ng-model-options="{debounce: 100}"
-                           ng-change="vm.search()"/>
+                           ng-model-options="{debounce: 150}"/>
                 </div>
                 <div class="col-sm-6 col-md-4">
                     <div class="text-right">
@@ -103,8 +102,17 @@
                     </div>
                 </div>
             </div>
+            <div class="row">
+                <div class="col-xs-12">
+                    Filter by popular tag:
+                    <div class="btn-group">
+                        <label class="btn btn-default" ng-repeat="tag in vm.tags | orderBy : 'count' : true | limitTo : 6"
+                               ng-model="vm.tag" uib-btn-radio="tag.tag" uncheckable>{{tag.tag}}</label>
+                    </div>
+                </div>
+            </div>
             <div class="form-group">
-                <div class="col-xs-6 col-sm-3 col-md-2 col-lg-1" ng-repeat="(id, image) in vm.images">
+                <div class="col-xs-6 col-sm-3 col-md-2 col-lg-1" ng-repeat="(id, image) in vm.images | image : vm.searchTerm : vm.tag">
                     <div class="text-center">
                         <div class="list-img">
                             <button type="button" class="btn btn-default" title="{{image.name}}"
