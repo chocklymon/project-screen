@@ -172,15 +172,15 @@ imageShareModule.factory('Images', ['$log', 'rootSocket', function($log, rootSoc
         if (refreshTags) {
             tags = {};
             var i, l, tag;
-            angular.forEach(images, function (img) {
+            angular.forEach(images, function (img, id) {
                 for (i = 0, l = img.tags.length; i < l; i++) {
                     tag = img.tags[i];
                     if (tag in tags) {
                         tags[tag].count++;
                     } else {
-                        tags[tag] = {count: 1, images: []};
+                        tags[tag] = {count: 1, images: {}};
                     }
-                    tags[tag].images.push(img);
+                    tags[tag].images[id] = img;
                 }
             });
             refreshTags = false;
