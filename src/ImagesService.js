@@ -5,11 +5,12 @@ var Promise = require('bluebird');
 var fs = Promise.promisifyAll(require('fs'));
 var thumb = require('node-thumbnail').thumb;
 var forEach = require('lodash/forEach');
+var copy = require('lodash/cloneDeep');
 
 var IMAGES_DIR = __dirname + '/../public/images';
 var THUMBS_DIR = __dirname + '/../public/thumbs';
 var IMAGES_FILE = __dirname + '/../linkedImages.json';
-var FILE_VERSION = 3;
+var FILE_VERSION = 4;
 
 function getExtension(file) {
     var lastDot = file.lastIndexOf('.');
@@ -178,40 +179,59 @@ function createImagesData(directoryList, data) {
 
 
 function migrateFile(file, persistIfMigrated) {
-    var migrated = false;
-    if (Array.isArray(file) || file['__version'] < 2) {
-        // Convert to version 2
-        var newFile = {
-            '__version': 2,
+    var migrated = false,
+        migratedFile = {
+            '__version': FILE_VERSION,
             'images': {}
         };
+
+    if (Array.isArray(file) || file['__version'] < 2) {
+        // Convert to version 2
         forEach(file, function(imgSrc) {
-            newFile.images[imgSrc] = {
+            migratedFile.images[imgSrc] = {
                 src: imgSrc,
                 thumb: imgSrc,
                 name: fileName(imgSrc),
                 tags: []
             };
         });
-        file = newFile;
         migrated = true;
     }
 
     if (file['__version'] === 2) {
         // Migrate to version 3
-        forEach(file.images, function(img) {
-            img.external = true;
+        forEach(file.images, function(img, i) {
+            migratedFile.images[i] = copy(img);
+            migratedFile.images[i].external = true;
         });
-        file['__version'] = 3;
         migrated = true;
     }
 
-    if (migrated && persistIfMigrated) {
-        console.log('File migration performed, saving...');
-        return writeImagesFile(file)
-            .then(function() {
-                return file;
+    if (file['__version'] === 3) {
+        // Migrate to version 4
+        forEach(file.images, function(img, i) {
+            var newImg = copy(img);
+            forEach(newImg.tags, function(tag, index) {
+                newImg.tags[index] = tag.toLowerCase();
             });
+            newImg.tags.sort();
+            migratedFile.images[i] = newImg;
+        });
+        migrated = true;
+    }
+
+    if (migrated) {
+        if (persistIfMigrated) {
+            console.log('File migration performed, saving...');
+            return fs.writeFileAsync(IMAGES_FILE + '.backup', JSON.stringify(file, null, 2), 'UTF-8')
+                .then(function () {
+                    return writeImagesFile(migratedFile)
+                })
+                .then(function () {
+                    return migratedFile;
+                });
+        }
+        return Promise.resolve(migratedFile);
     }
     return Promise.resolve(file);
 }
@@ -250,6 +270,49 @@ function getImages() {
         });
 }
 
+function isValidUpdate(image) {
+    var reason = false;
+    if (image && typeof image === 'object') {
+        if (!('id' in image)) {
+            reason = 'No image id';
+        }
+    } else {
+        reason = 'No image object provided';
+    }
+    return reason;
+}
+
+function updateImage(image) {
+    var reason = isValidUpdate(image);
+    if (reason === false) {
+        // Can update
+        return readImagesData()
+            .then(function(file) {
+                if (!(image.id in file.images)) {
+                    throw {'error': 'Invalid image update', 'reason': 'No image with given id'}
+                }
+
+                // Update editable attributes, if in the provided image object
+                var img = file.images[image.id];
+                if ('name' in image) {
+                    img.name = image.name;
+                }
+                if ('tags' in image && Array.isArray(image.tags)) {
+                    img.tags = image.tags.sort();
+                    forEach(img.tags, function(tag, i) {
+                        img.tags[i] = tag.toLowerCase();
+                    })
+                }
+                file.images[image.id] = img;
+
+                return ImagesService.writeImagesFile(file);
+            });
+    } else {
+        // Invalid image object
+        return Promise.reject({'error': 'Invalid image update', 'reason': reason});
+    }
+}
+
 var ImagesService = {
 
     getImages: getImages,
@@ -257,9 +320,13 @@ var ImagesService = {
     readImagesFile: readImagesData,
 
     writeImagesFile: function (fileContents) {
-        fileContents = migrateFile(fileContents, false);
-        return writeImagesFile(fileContents);
+        return migrateFile(fileContents, false)
+            .then(function(file) {
+                return writeImagesFile(file);
+            });
     },
+
+    updateImage: updateImage,
 
     addImageByUrl: function addImageByUrl(url) {
         // Get the current images list

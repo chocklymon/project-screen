@@ -57,6 +57,17 @@ module.exports = function(server) {
             sendImagesTo(socket);
         });
 
+        // Edit image
+        socket.on('app.patchImage', function(image) {
+            imagesService.updateImage(image)
+                .then(function() {
+                    socket.emit('app.patchImage', {'success': true});
+                })
+                .catch(function(err) {
+                    emitError(socket, err);
+                });
+        });
+
         // Image change events. Take an image change and then broadcast it to the room.
         socket.on('app.changeImage', function(image) {
             if (socket.managerId) {
