@@ -465,15 +465,15 @@ imageShareModule.directive('initiativeTracker', [function() {
         vm.combatants = [{
             name: 'Bugbear 1',
             initiative: 15,
-            image: 'images/Bugbear.jpg'
+            image: 'thumbs/Bugbear.jpg'
         }, {
             name: 'Bugbear 2',
             initiative: 10,
-            image: 'images/Bugbear.jpg'
+            image: 'thumbs/Bugbear.jpg'
         }, {
             name: 'Doppelganger',
             initiative: 9,
-            image: 'images/Doppelganger.jpg'
+            image: 'thumbs/Doppelganger.jpg'
         }];
     }
     return {
@@ -481,14 +481,7 @@ imageShareModule.directive('initiativeTracker', [function() {
         scope: {},
         controller: InitativeTrackerController,
         controllerAs: '$itctrl',
-        template:
-        '<div class="it-container"><div class="row"><div class="col-xs-12">' +
-        '<div class="row it-combatant" ng-repeat="combatant in $itctrl.combatants">' +
-        '<div class="col-xs-3 col-sm-2"><img src="{{combatant.image}}" alt="" class="it-img"/></div>' +
-        '<div class="col-xs-7 col-sm-9"><strong>{{combatant.name}}</strong></div>' +
-        '<div class="col-xs-2 col-sm-1 text-center">{{combatant.initiative}}</div>' +
-        '</div>' +
-        '</div></div></div>'
+        templateUrl: 'InitiativeTracker.html'
     };
 }]);
 

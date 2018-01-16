@@ -162,10 +162,9 @@
     border-bottom: 1px solid #efefef;
 }
 .it-img {
-    display: block;
-    max-width: 100%;
+    max-width: 64px;
     height: auto;
-    max-height: 50px;
+    max-height: 64px;
 }
 
 /* Misc */

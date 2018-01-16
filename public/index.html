@@ -51,7 +51,6 @@
 </script>
 <script type="text/ng-template" id="ManageTemplate.html">
     <div class="container-fluid">
-        <initiative-tracker></initiative-tracker>
         <form class="form-horizontal" ng-submit="vm.addImage()">
             <div class="form-group">
                 <div class="col-sm-6 col-md-8">
@@ -160,6 +159,7 @@
             </div>
         </form>
     </div>
+    <initiative-tracker></initiative-tracker>
 </script>
 <script type="text/ng-template" id="EditImageTemplate.html">
     <div class="modal-header">
@@ -204,6 +204,27 @@
     <div class="modal-footer">
         <button type="button" class="btn btn-default" ng-click="vm.close()">Close</button>
         <button type="button" class="btn btn-primary" ng-click="vm.save()">Save changes</button>
+    </div>
+</script>
+<script type="text/ng-template" id="InitiativeTracker.html">
+    <div class="it-container">
+        <div class="row">
+            <div class="col-xs-12">
+                <div class="media it-combatant" ng-repeat="combatant in $itctrl.combatants">
+                    <div class="media-left">
+                        <img src="" ng-src="{{combatant.image}}" alt="" class="it-img media-object"/>
+                    </div>
+                    <div class="media-body media-middle">
+                        <div class="col-xs-10">
+                            <p class="it-combatant-name">{{combatant.name}}</p>
+                        </div>
+                        <div class="col-xs-2 text-center">
+                            <p>{{combatant.initiative}}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </script>
 </body>
