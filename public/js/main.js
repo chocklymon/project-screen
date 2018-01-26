@@ -663,6 +663,10 @@ imageShareModule.controller('EditImageController', ['$log', '$uibModalInstance',
         $uibModalInstance.dismiss('cancel');
     };
     vm.save = function() {
+        if (vm.newTags) {
+            // There are tags in the input box, add them
+            vm.addTags();
+        }
         $uibModalInstance.close(vm.image);
     };
     vm.addTags = function() {
