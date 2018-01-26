@@ -293,22 +293,28 @@ function updateImage(image) {
                 }
 
                 // Update editable attributes, if in the provided image object
-                var img = file.images[image.id];
+                var img = file.images[image.id],
+                    i;
                 if ('name' in image) {
                     img.name = image.name;
                 }
                 if ('tags' in image && Array.isArray(image.tags)) {
                     // Normalize the tags
-                    // First: lowercase all tags
-                    forEach(img.tags, function(tag, i) {
-                        img.tags[i] = tag.toLowerCase();
-                    });
+                    // First: trim and lowercase all tags
+                    for (i = 0; i < image.tags.length; i++) {
+                        image.tags[i] = image.tags[i].trim().toLowerCase();
+                        if (!image.tags[i]) {
+                            // Remove empty tags
+                            image.tags.splice(i, 1);
+                            i--;
+                        }
+                    }
 
                     // Second: sort the tags alphabetically
                     img.tags = image.tags.sort();
 
                     // Third: remove duplicates
-                    for (var i = 1; i < img.tags.length; i++) {
+                    for (i = 1; i < img.tags.length; i++) {
                         if (img.tags[i - 1] === img.tags[i]) {
                             img.tags.splice(i, 1);
                             i--;
