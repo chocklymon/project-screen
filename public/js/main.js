@@ -675,6 +675,15 @@ imageShareModule.controller('EditImageController', ['$log', '$uibModalInstance',
                 }
             }
             vm.image.tags.sort();
+
+            // Check for and remove duplicates
+            for (i = 1; i < vm.image.tags.length; i++) {
+                if (vm.image.tags[i - 1] === vm.image.tags[i]) {
+                    vm.image.tags.splice(i, 1);
+                    i--;
+                }
+            }
+
             vm.newTags = '';
         }
     };

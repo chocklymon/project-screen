@@ -298,10 +298,22 @@ function updateImage(image) {
                     img.name = image.name;
                 }
                 if ('tags' in image && Array.isArray(image.tags)) {
-                    img.tags = image.tags.sort();
+                    // Normalize the tags
+                    // First: lowercase all tags
                     forEach(img.tags, function(tag, i) {
                         img.tags[i] = tag.toLowerCase();
-                    })
+                    });
+
+                    // Second: sort the tags alphabetically
+                    img.tags = image.tags.sort();
+
+                    // Third: remove duplicates
+                    for (var i = 1; i < img.tags.length; i++) {
+                        if (img.tags[i - 1] === img.tags[i]) {
+                            img.tags.splice(i, 1);
+                            i--;
+                        }
+                    }
                 }
                 file.images[image.id] = img;
 
