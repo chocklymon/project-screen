@@ -106,7 +106,7 @@
                 <div class="col-xs-12">
                     Filter by popular tag:
                     <div class="btn-group">
-                        <label class="btn btn-default" ng-repeat="tag in vm.tags | orderBy : 'count' : true | limitTo : 6"
+                        <label class="btn btn-default" ng-repeat="tag in vm.tags | orderBy : 'count' : true | limitTo : 7"
                                ng-model="vm.tag" uib-btn-radio="tag.tag" uncheckable>{{tag.tag}}</label>
                     </div>
                 </div>

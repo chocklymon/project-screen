@@ -574,8 +574,12 @@ imageShareModule.controller('ManageController', [
             });
     };
     vm.getImages = getImages;
-    vm.selectImage = changeImage;
-    vm.selectBackgroundImage = changeBgImage;
+    vm.selectImage = function(id) {
+        changeImage(id, true);
+    };
+    vm.selectBackgroundImage = function(id) {
+        changeBgImage(id, true);
+    };
     vm.setBgColor = changeBgColor;
 
     // Socket events
@@ -622,13 +626,23 @@ imageShareModule.controller('ManageController', [
         return tags;
     }
 
-    function changeImage(id) {
+    function changeImage(id, toggleOffAllowed) {
+        if (toggleOffAllowed && id === vm.current.image) {
+            // Same id selected as before, toggle off
+            id = '';
+        }
+
         var imgSrc = (vm.images[id]) ? vm.images[id].src : '';
         vm.current.image = id;
         socket.emit('app.changeImage', imgSrc);
         saveCurrent();
     }
-    function changeBgImage(id) {
+    function changeBgImage(id, toggleOffAllowed) {
+        if (toggleOffAllowed && id === vm.current.background) {
+            // Same id selected as before, toggle off
+            id = '';
+        }
+
         var imgSrc = (vm.images[id]) ? vm.images[id].src : '';
         vm.current.background = id;
         socket.emit('app.changeBgImage', imgSrc);
