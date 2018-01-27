@@ -216,6 +216,52 @@ imageShareModule.factory('Images', ['$log', 'rootSocket', function($log, rootSoc
     };
 }]);
 
+imageShareModule.factory('Messages', [function() {
+    var messages = [];
+    function addMessage(type, msg) {
+        // TODO provide a way to assign an ID so that messages with the same ID are not added multiple times.
+        messages.push({ type: type, msg: msg });
+    }
+    function removeMessage(index) {
+        if (index >= 0 && index < messages.length) {
+            messages.splice(index, 1);
+        }
+    }
+
+    return {
+        addMessage: addMessage,
+        closeMessage: removeMessage,
+        error: function(msg) {
+            addMessage('danger', msg);
+        },
+        success: function(msg) {
+            addMessage('success', msg);
+        },
+        warning: function(msg) {
+            addMessage('warning', msg);
+        },
+        _messages: messages
+    };
+}]);
+imageShareModule.directive('psAlerts', [function() {
+    alertsController.$inject = ['Messages'];
+    function alertsController(Messages) {
+        this.messages = Messages._messages;
+        this.closeMessage = Messages.closeMessage;
+    }
+
+    return {
+        restrict: 'EA',
+        controller: alertsController,
+        controllerAs: '$ctrl',
+        template:
+        '<div class="message-container">' +
+            '<div ng-repeat="msg in $ctrl.messages" ng-class="\'alert-\' + (msg.type || \'warning\')" ' +
+                 'uib-alert close="$ctrl.closeMessage($index)">{{msg.msg}}</div>' +
+        '</div>'
+    };
+}]);
+
 imageShareModule.filter('image', ['levenshtein', 'Images', function(levenshtein, Images) {
     function myExtend(src) {
         var destinations = Array.prototype.slice.call(arguments, 1);
@@ -508,9 +554,9 @@ imageShareModule.controller('DisplayController', ['$log', '$rootScope', '$routeP
 }]);
 
 imageShareModule.controller('ManageController', [
-    '$log', '$uibModal', 'rootSocket', 'CodeName', 'Images', 'SessionStorage',
+    '$log', '$uibModal', 'rootSocket', 'CodeName', 'Images', 'Messages', 'SessionStorage',
     function(
-        $log, $uibModal, rootSocket, CodeName, Images, SessionStorage
+        $log, $uibModal, rootSocket, CodeName, Images, Messages, SessionStorage
     ) {
     var vm = this;
     var socket = rootSocket.get();
@@ -585,6 +631,7 @@ imageShareModule.controller('ManageController', [
     // Socket events
     socket.on('connect', function() {
         socket.emit('join', vm.managerId);
+        Messages.success('Joined room: ' + vm.managerId);// TODO remove
     });
     socket.on('app.patchImage', function(r) {
         $log.log('Image patched', r);
